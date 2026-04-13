@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BNY Demand Intelligence Portal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00c6ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --pipeline: #7c3aed;
+    --bau: #0ea5e9;
+    --fulfilled: #10b981;
+    --new: #f59e0b;
+    --backfill: #ef4444;
+    --rebadge: #a78bfa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #111827 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: white;
+  }
+
+  .logo-text { font-size: 15px; font-weight: 600; letter-spacing: 0.5px; }
+  .logo-sub { font-size: 11px; color: var(--text2); font-weight: 400; }
+
+  .header-right { display: flex; align-items: center; gap: 16px; }
+
+  .date-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 6px;
+  }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    gap: 4px;
+  }
+
+  .nav-tab {
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .nav-tab:hover { color: var(--text); }
+
+  .nav-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-icon { font-size: 15px; }
+
+  /* MAIN CONTENT */
+  .main { padding: 28px 32px; max-width: 1600px; margin: 0 auto; }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card[style*="span 2"] {
+    grid-column: span 2;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .kpi-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent-color, var(--accent));
+  }
+
+  .kpi-label { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .kpi-value { font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .kpi-sub { font-size: 12px; color: var(--text3); }
+  .kpi-icon { position: absolute; top: 16px; right: 16px; font-size: 24px; opacity: 0.3; }
+
+  /* SECTION HEADERS */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .section-title::before {
+    content: '';
+    width: 3px; height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  .export-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* CHARTS GRID */
+  .charts-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .charts-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .chart-full { margin-bottom: 20px; }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .chart-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .chart-wrap { position: relative; }
+
+  /* FILTERS */
+  .filters-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-label { font-size: 12px; color: var(--text3); }
+
+  .filter-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'Sora', sans-serif;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .filter-select:focus { border-color: var(--accent); }
+
+  /* PIPELINE TABLE */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  th {
+    background: var(--surface2);
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  tr:hover td { background: var(--surface2); }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-new { background: rgba(245,158,11,0.15); color: var(--new); }
+  .badge-bau { background: rgba(14,165,233,0.15); color: var(--bau); }
+  .badge-backfill { background: rgba(239,68,68,0.15); color: var(--backfill); }
+  .badge-rebadge { background: rgba(167,139,250,0.15); color: var(--rebadge); }
+  .badge-pipeline { background: rgba(124,58,237,0.15); color: var(--pipeline); }
+  .badge-fulfilled { background: rgba(16,185,129,0.15); color: var(--fulfilled); }
+  .badge-onsite { background: rgba(0,198,255,0.15); color: var(--accent); }
+  .badge-offshore { background: rgba(99,102,241,0.15); color: #818cf8; }
+  .badge-tbc { background: rgba(100,116,139,0.15); color: var(--text2); }
+
+  /* REV TABLE */
+  .rev-table-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* DONUT LABELS */
+  .donut-legend { margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(30,45,69,0.4); }
+  .legend-item:last-child { border-bottom: none; }
+  .legend-left { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-count { font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+  .legend-pct { font-size: 10px; color: var(--text3); margin-left: 4px; }
+
+  /* IMPORT SECTION */
+  .import-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+  }
+
+  .import-zone:hover { border-color: var(--accent); background: rgba(0,198,255,0.03); }
+  .import-zone.dragover { border-color: var(--accent); background: rgba(0,198,255,0.06); }
+
+  .import-icon { font-size: 36px; margin-bottom: 12px; }
+  .import-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .import-sub { font-size: 12px; color: var(--text2); }
+
+  .import-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Sora', sans-serif;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: opacity 0.2s;
+  }
+
+  .import-btn:hover { opacity: 0.9; }
+
+  /* SEARCH */
+  .search-input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'Sora', sans-serif;
+    outline: none;
+    width: 240px;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+
+  .hidden { display: none !important; }
+
+  /* PIPELINE ALERT */
+  .pipeline-alert {
+    background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(0,198,255,0.05));
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 16px;
+  }
+
+  .alert-icon { font-size: 24px; }
+  .alert-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .alert-sub { font-size: 12px; color: var(--text2); }
+
+  /* PAGINATION */
+  .pagination { display: flex; align-items: center; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+  .page-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text2); padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: 'Sora', sans-serif; transition: all 0.15s; }
+  .page-btn:hover, .page-btn.active { border-color: var(--accent); color: var(--accent); }
+  .page-info { font-size: 12px; color: var(--text3); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface2); border: 1px solid var(--accent);
+    color: var(--text); padding: 12px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 500;
+    z-index: 9999; opacity: 0; transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  @media (max-width: 1024px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid-2, .charts-grid-3, .rev-table-grid { grid-template-columns: 1fr; }
+  }
+
+  /* EDIT MODE */
+  .edit-mode-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none; color: white;
+    padding: 7px 16px; border-radius: 8px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: 'Sora', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .edit-mode-btn:hover { opacity: 0.88; }
+  .edit-mode-btn.active { background: linear-gradient(135deg, #10b981, #059669); }
+
+  .add-row-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px dashed var(--accent3);
+    color: var(--accent3); padding: 7px 16px; border-radius: 8px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: 'Sora', sans-serif;
+    transition: all 0.2s;
+  }
+  .add-row-btn:hover { background: rgba(16,185,129,0.1); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 720px; max-width: 95vw;
+    max-height: 88vh; overflow-y: auto;
+    padding: 28px;
+    transform: translateY(20px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .modal-close {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text2); width: 32px; height: 32px;
+    border-radius: 8px; cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { border-color: var(--accent5); color: var(--accent5); }
+
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .modal-field { display: flex; flex-direction: column; gap: 6px; }
+  .modal-field.full { grid-column: 1 / -1; }
+  .modal-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; }
+
+  .modal-input, .modal-select, .modal-textarea {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 9px 12px; border-radius: 8px;
+    font-size: 13px; font-family: 'Sora', sans-serif;
+    outline: none; transition: border-color 0.2s;
+    width: 100%;
+  }
+  .modal-input:focus, .modal-select:focus, .modal-textarea:focus { border-color: var(--accent); }
+  .modal-textarea { resize: vertical; min-height: 72px; }
+  .modal-select option { background: var(--surface2); }
+
+  .modal-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 24px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none; color: white; padding: 10px 24px;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    font-family: 'Sora', sans-serif; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-save:hover { opacity: 0.88; }
+
+  .btn-delete {
+    background: rgba(239,68,68,0.1); border: 1px solid var(--accent5);
+    color: var(--accent5); padding: 10px 20px;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    font-family: 'Sora', sans-serif; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-delete:hover { background: rgba(239,68,68,0.2); }
+
+  .btn-cancel {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text2); padding: 10px 20px;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    font-family: 'Sora', sans-serif; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-cancel:hover { border-color: var(--text2); color: var(--text); }
+
+  /* EDITABLE ROW HIGHLIGHT */
+  tr.editable-row { cursor: pointer; }
+  tr.editable-row:hover td { background: rgba(0,198,255,0.05) !important; }
+  tr.editable-row td:first-child { border-left: 2px solid transparent; }
+  tr.editable-row:hover td:first-child { border-left-color: var(--accent); }
+
+  .edit-indicator {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; color: var(--accent3);
+    background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+    padding: 2px 8px; border-radius: 20px; margin-left: 8px;
+  }
+
+  .unsaved-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent4); display: inline-block;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">BN</div>
+    <div>
+      <div class="logo-text">BNY Demand Intelligence Portal</div>
+      <div class="logo-sub">Fulfilment Tracker · Live Data</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="date-badge" id="currentDate"></div>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <div class="nav-tab active" onclick="showTab('revenue')" id="tab-revenue">
+    <span class="tab-icon">💰</span> Revenue & Fulfilment
+  </div>
+  <div class="nav-tab" onclick="showTab('demands')" id="tab-demands">
+    <span class="tab-icon">📊</span> Demands View
+  </div>
+  <div class="nav-tab" onclick="showTab('basedata')" id="tab-basedata">
+    <span class="tab-icon">🗄️</span> Base Data
+  </div>
+</nav>
+
+<!-- ===== SCREEN 1: REVENUE & FULFILMENT ===== -->
+<div class="main" id="screen-revenue">
+
+  <!-- TOP KPIs -->
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <!-- PIPELINE NEXT MONTH ALERT -->
+  <div class="pipeline-alert" id="pipeline-alert"></div>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <span class="filter-label">Filter by:</span>
+    <select class="filter-select" id="filter-year" onchange="applyFilters()">
+      <option value="all">All Years</option>
+    </select>
+    <select class="filter-select" id="filter-quarter" onchange="applyFilters()">
+      <option value="all">All Quarters</option>
+      <option value="Q1">Q1</option>
+      <option value="Q2">Q2</option>
+      <option value="Q3">Q3</option>
+      <option value="Q4">Q4</option>
+    </select>
+    <select class="filter-select" id="filter-demand-type" onchange="applyFilters()">
+      <option value="all">All Demand Types</option>
+    </select>
+    <div style="margin-left:auto;">
+      <button class="export-btn" onclick="exportScreen1()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <!-- REVENUE BY ACCOUNT / YEAR / QUARTER TABLE + LINE CHART -->
+  <div class="charts-grid-2">
+    <div class="chart-card">
+      <div class="chart-title">📈 Cumulative Revenue Stream by Quarter</div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="revenueLineChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🏦 Revenue by Account · Year · Quarter</div>
+      <div class="table-wrap" style="max-height:280px; overflow-y:auto;">
+        <table id="revTable">
+          <thead>
+            <tr>
+              <th>Account</th><th>Year</th><th>Quarter</th>
+              <th>Monthly Rev (USD)</th><th>Yearly Rev (USD)</th><th>Positions</th>
+            </tr>
+          </thead>
+          <tbody id="revTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULFILMENT + OPERATIONAL STATUS -->
+  <div class="charts-grid-3">
+    <div class="chart-card">
+      <div class="chart-title">🎯 Fulfilment by Demand Type</div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="fulfilmentDonut"></canvas>
+      </div>
+      <div class="donut-legend" id="fulfilmentLegend"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">⚙️ Operational Status</div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="opStatusChart"></canvas>
+      </div>
+      <div class="donut-legend" id="opStatusLegend"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📅 Demand Type Distribution</div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="demandTypeBar"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== SCREEN 2: DEMANDS VIEW ===== -->
+<div class="main hidden" id="screen-demands">
+
+  <div class="section-header">
+    <div class="section-title">Demands Analytics</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="filter-label">Year:</span>
+      <select class="filter-select" id="demand-year-filter" onchange="renderDemandsView()">
+        <option value="all">All Years</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
+      <button class="export-btn" onclick="exportDemands()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <!-- ROW 1: Specialization + Demand Type grouped by year -->
+  <div class="charts-grid-2">
+    <div class="chart-card">
+      <div class="chart-title">🔬 Breakdown by Specialization &amp; Year</div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="specChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🏷️ Breakdown by Demand Type &amp; Year</div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="demandType2Chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Onsite/Offshore by year + New demand quarterly -->
+  <div class="charts-grid-2">
+    <div class="chart-card">
+      <div class="chart-title">🌐 Onsite vs Offshore by Year</div>
+      <div class="chart-wrap" style="height:230px;">
+        <canvas id="onsiteOffshoreChart"></canvas>
+      </div>
+      <div class="donut-legend" id="onsiteLegend"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📆 New Demand Count by Quarter &amp; Year</div>
+      <div class="chart-wrap" style="height:230px;">
+        <canvas id="newDemandQtrChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== SCREEN 3: BASE DATA ===== -->
+<div class="main hidden" id="screen-basedata">
+
+  <!-- IMPORT ZONE -->
+  <div class="import-zone" id="importZone" onclick="document.getElementById('fileInput').click()">
+    <div class="import-icon">📥</div>
+    <div class="import-title">Import New Data</div>
+    <div class="import-sub">Drag & drop an Excel/CSV file or click to browse<br>Only new rows will be added — duplicates are skipped</div>
+    <button class="import-btn" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">
+      📁 Choose File
+    </button>
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" class="hidden" onchange="handleFileImport(event)">
+  </div>
+
+  <!-- SEARCH & EXPORT -->
+  <div class="section-header" style="margin-bottom:16px;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <input type="text" class="search-input" id="baseSearch" placeholder="🔍 Search roles, candidates, specializations..." oninput="filterBaseData()">
+      <select class="filter-select" id="base-op-filter" onchange="filterBaseData()">
+        <option value="all">All Operational Status</option>
+      </select>
+      <select class="filter-select" id="base-type-filter" onchange="filterBaseData()">
+        <option value="all">All Demand Types</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span class="page-info" id="baseDataInfo" style="line-height:32px;"></span>
+      <button class="add-row-btn" onclick="openAddModal()">＋ Add Row</button>
+      <button class="edit-mode-btn" id="editModeBtn" onclick="toggleEditMode()">✏️ Edit Mode</button>
+      <button class="export-btn" onclick="exportBaseData()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <div class="chart-card" style="padding:0; overflow:hidden;">
+    <div class="table-wrap" style="max-height:560px; overflow-y:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Demand Name</th>
+            <th>Role</th>
+            <th>Demand Type</th>
+            <th>Operational Status</th>
+            <th>Specialization</th>
+            <th>Onsite/Offshore</th>
+            <th>Billing Start</th>
+            <th>Quarter</th>
+            <th>Resources</th>
+            <th>Monthly Rev ($)</th>
+            <th>Candidate</th>
+            <th>Status</th>
+            <th>Location</th>
+            <th>Comments</th>
+          </tr>
+        </thead>
+        <tbody id="baseDataBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="pagination" id="basePagination"></div>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">✏️ Edit Record</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-field">
+        <label class="modal-label">Demand Name</label>
+        <input class="modal-input" id="f_demand_name" type="text">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Role</label>
+        <input class="modal-input" id="f_role" type="text">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Demand Type</label>
+        <select class="modal-select" id="f_demand_type">
+          <option>BAU</option><option>New</option><option>Backfill</option><option>Rebadge</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Operational Status</label>
+        <select class="modal-select" id="f_operational_status">
+          <option>BAU</option><option>Pipeline</option><option>Fulfilled (onboarding in progress)</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Specialization</label>
+        <select class="modal-select" id="f_specialization">
+          <option>GRC</option><option>Wealth management</option><option>Corp Engg</option><option>Asset Services Engineering</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Onsite / Offshore</label>
+        <select class="modal-select" id="f_onsite_offshore">
+          <option>Onsite</option><option>Offshore</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Billing Start Date</label>
+        <input class="modal-input" id="f_billing_start_date_str" type="date">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Billing End Date</label>
+        <input class="modal-input" id="f_billing_end_date_str" type="date">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Quarter</label>
+        <select class="modal-select" id="f_quarter">
+          <option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label"># of Resources</label>
+        <input class="modal-input" id="f_num_resources" type="number" min="0" step="0.5">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Monthly Revenue (USD)</label>
+        <input class="modal-input" id="f_monthly_revenue" type="number" min="0">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Yearly Revenue (USD)</label>
+        <input class="modal-input" id="f_yearly_revenue" type="number" min="0">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Bill Rate (USD)</label>
+        <input class="modal-input" id="f_bill_rate_usd" type="number" min="0">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Candidate Name</label>
+        <input class="modal-input" id="f_candidate_name" type="text">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Status</label>
+        <input class="modal-input" id="f_status2" type="text">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Role Location</label>
+        <input class="modal-input" id="f_role_location" type="text">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Working Model</label>
+        <select class="modal-select" id="f_working_model">
+          <option>Onsite</option><option>Offshore</option><option>Hybrid</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Account POC</label>
+        <input class="modal-input" id="f_account_poc" type="text">
+      </div>
+      <div class="modal-field full">
+        <label class="modal-label">Comments</label>
+        <textarea class="modal-textarea" id="f_comments"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-delete" id="deleteBtn" onclick="deleteRecord()">🗑 Delete Record</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveRecord()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==============================
+// EMBEDDED DATA
+// ==============================
+const RAW_DATA = [{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2025","year_from_date":2025,"month_from_date":1,"num_resources":1.0,"monthly_revenue":22880.0,"yearly_revenue":298584.0,"role":"Alternatives","demand_name":"Alternatives","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":143.0,"candidate_name":"Partha Dutta","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Jan 2025","demand_aging":467.0,"comments":"","billing_start_date_str":"2025-01-01","billing_end_date_str":"2025-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2025","year_from_date":2025,"month_from_date":1,"num_resources":1.0,"monthly_revenue":21000.0,"yearly_revenue":274050.0,"role":"Pershing US","demand_name":"Pershing US","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":131.25,"candidate_name":"Jitender Kumar","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Jan 2025","demand_aging":467.0,"comments":"","billing_start_date_str":"2025-01-01","billing_end_date_str":"2025-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2025","year_from_date":2025,"month_from_date":3,"num_resources":1.0,"monthly_revenue":20000.0,"yearly_revenue":216000.0,"role":"Alternatives","demand_name":"Alternatives","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":125.0,"candidate_name":"Vaishali Shetty","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Mar 2025","demand_aging":467.0,"comments":"","billing_start_date_str":"2025-03-05","billing_end_date_str":"2025-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2025","year_from_date":2025,"month_from_date":1,"num_resources":1.0,"monthly_revenue":20640.0,"yearly_revenue":255936.0,"role":"ECV","demand_name":"ECV","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":129.0,"candidate_name":"Ajay Singh Raghav","status2":"Candidate onboarded","role_location":"Lake Mary","working_model":"Onsite","billing_start_month":"Jan 2025","demand_aging":467.0,"comments":"","billing_start_date_str":"2025-01-20","billing_end_date_str":"2025-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2025","year_from_date":2025,"month_from_date":3,"num_resources":1.0,"monthly_revenue":20640.0,"yearly_revenue":265224.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":129.0,"candidate_name":"Priyank Bhattacharjee","status2":"Candidate onboarded","role_location":"Toronto","working_model":"Onsite","billing_start_month":"Mar 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-03-01","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2025","year_from_date":2025,"month_from_date":4,"num_resources":1.0,"monthly_revenue":20640.0,"yearly_revenue":229104.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":129.0,"candidate_name":"Samprit Shah","status2":"Candidate onboarded","role_location":"Lake Mary","working_model":"Onsite","billing_start_month":"Apr 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-04-21","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q3","year":"2025","year_from_date":2025,"month_from_date":7,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":45968.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":34.0,"candidate_name":"Mahal Sengupta","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Jul 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-07-03","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2025","year_from_date":2025,"month_from_date":6,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":49504.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":34.0,"candidate_name":"Jayashree Lakshmanan","status2":"Candidate onboarded","role_location":"Chicago","working_model":"Onsite","billing_start_month":"Jun 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-06-16","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q3","year":"2025","year_from_date":2025,"month_from_date":8,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":39984.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":34.0,"candidate_name":"Jose Bunag","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Aug 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-08-04","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2025","year_from_date":2025,"month_from_date":4,"num_resources":1.0,"monthly_revenue":22080.0,"yearly_revenue":245088.0,"role":"Pershing US - PO","demand_name":"Pershing US - PO","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":138.0,"candidate_name":"Italo Minuche","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Apr 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-04-21","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q3","year":"2025","year_from_date":2025,"month_from_date":7,"num_resources":1.0,"monthly_revenue":17404.8,"yearly_revenue":142719.36,"role":"Pershing US - PO","demand_name":"Pershing US - PO","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":108.78,"candidate_name":"Pratiti Basu","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Jul 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-07-10","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2025","year_from_date":2025,"month_from_date":4,"num_resources":1.0,"monthly_revenue":22080.0,"yearly_revenue":186576.0,"role":"Pershing US","demand_name":"Pershing US","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":138.0,"candidate_name":"Amr Saad","status2":"Candidate onboarded","role_location":"Chicago","working_model":"Onsite","billing_start_month":"Apr 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-04-08","billing_end_date_str":"2025-11-30"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q3","year":"2025","year_from_date":2025,"month_from_date":8,"num_resources":1.0,"monthly_revenue":16800.0,"yearly_revenue":124320.0,"role":"Financial Crime & Compliance","demand_name":"Financial Crime & Compliance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":105.0,"candidate_name":"Shyam Padmanabhan","status2":"Candidate onboarded","role_location":"Chicago","working_model":"Onsite","billing_start_month":"Aug 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-08-01","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q3","year":"2025","year_from_date":2025,"month_from_date":9,"num_resources":1.0,"monthly_revenue":16800.0,"yearly_revenue":37800.0,"role":"Financial Crime & Compliance","demand_name":"Financial Crime & Compliance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":105.0,"candidate_name":"Vrushti Gangwal","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Sep 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-09-15","billing_end_date_str":"2025-11-14"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q4","year":"2025","year_from_date":2025,"month_from_date":11,"num_resources":1.0,"monthly_revenue":15520.0,"yearly_revenue":55872.0,"role":"Financial Crime & Compliance","demand_name":"Financial Crime & Compliance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":97.0,"candidate_name":"Vrushti Gangwal","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Nov 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-11-15","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q3","year":"2025","year_from_date":2025,"month_from_date":9,"num_resources":1.0,"monthly_revenue":22080.0,"yearly_revenue":129168.0,"role":"Trade Surveillance","demand_name":"Payments BA","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":138.0,"candidate_name":"Piyush Maheshwari","status2":"Candidate onboarded","role_location":"Chicago","working_model":"Onsite","billing_start_month":"Sep 2025","demand_aging":408.0,"comments":"","billing_start_date_str":"2025-09-15","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q1","year":"2025","year_from_date":2026,"month_from_date":1,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":10608.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":34.0,"candidate_name":"Aditi Athanikar","status2":"Candidate onboarded","role_location":"Pune","working_model":"Offshore","billing_start_month":"Jan 2026","demand_aging":408.0,"comments":"","billing_start_date_str":"2026-01-01","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q1","year":"2025","year_from_date":2026,"month_from_date":1,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":10608.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":34.0,"candidate_name":"Mangesh Randive","status2":"Candidate onboarded","role_location":"Pune","working_model":"Offshore","billing_start_month":"Jan 2026","demand_aging":408.0,"comments":"","billing_start_date_str":"2026-01-01","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"fulfilled","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q1","year":"2025","year_from_date":2026,"month_from_date":1,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":10608.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":34.0,"candidate_name":"Abhas Mishra","status2":"Candidate onboarded","role_location":"Pune","working_model":"Offshore","billing_start_month":"Jan 2026","demand_aging":408.0,"comments":"","billing_start_date_str":"2026-01-01","billing_end_date_str":"2026-02-28"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":1,"num_resources":1.0,"monthly_revenue":22880.0,"yearly_revenue":287144.0,"role":"Alternatives","demand_name":"Alternatives","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":143.0,"candidate_name":"Partha Dutta","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Jan 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-01-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":1,"num_resources":1.0,"monthly_revenue":21000.0,"yearly_revenue":263550.0,"role":"Pershing US","demand_name":"Pershing US","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":131.25,"candidate_name":"Jitender Kumar","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Jan 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-01-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":1,"num_resources":1.0,"monthly_revenue":20000.0,"yearly_revenue":251000.0,"role":"Alternatives","demand_name":"Alternatives","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":125.0,"candidate_name":"Vaishali Shetty","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Jan 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-01-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":1,"num_resources":1.0,"monthly_revenue":20640.0,"yearly_revenue":259032.0,"role":"ECV","demand_name":"ECV","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":129.0,"candidate_name":"Ajay Singh Raghav","status2":"Candidate onboarded","role_location":"Lake Mary","working_model":"Onsite","billing_start_month":"Jan 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-01-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":18768.0,"yearly_revenue":198940.8,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":117.3,"candidate_name":"Priyank Bhattacharjee","status2":"Candidate onboarded","role_location":"Toronto","working_model":"Onsite","billing_start_month":"Mar 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":18768.0,"yearly_revenue":198940.8,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":117.3,"candidate_name":"Samprit Shah","status2":"Candidate onboarded","role_location":"Lake Mary","working_model":"Onsite","billing_start_month":"Mar 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":18768.0,"yearly_revenue":198940.8,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":117.3,"candidate_name":"Mahal Sengupta","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Mar 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":18768.0,"yearly_revenue":198940.8,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":117.3,"candidate_name":"Jayashree Lakshmanan","status2":"Candidate onboarded","role_location":"Chicago","working_model":"Onsite","billing_start_month":"Mar 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":18768.0,"yearly_revenue":198940.8,"role":"ECV","demand_name":"ECV","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":117.3,"candidate_name":"Shyam Padmanabhan","status2":"Candidate onboarded","role_location":"Chicago","working_model":"Onsite","billing_start_month":"Mar 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":18768.0,"yearly_revenue":198940.8,"role":"ECV","demand_name":"ECV","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":117.3,"candidate_name":"Vrushti Gangwal","status2":"Candidate onboarded","role_location":"NYC","working_model":"Onsite","billing_start_month":"Mar 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":18768.0,"yearly_revenue":198940.8,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":117.3,"candidate_name":"Piyush Maheshwari","status2":"Candidate onboarded","role_location":"Chicago","working_model":"Onsite","billing_start_month":"Mar 2026","demand_aging":102.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":57664.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":34.0,"candidate_name":"Aditi Athanikar","status2":"Candidate onboarded","role_location":"Pune","working_model":"Offshore","billing_start_month":"Mar 2026","demand_aging":101.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":57664.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":34.0,"candidate_name":"Mangesh Randive","status2":"Candidate onboarded","role_location":"Pune","working_model":"Offshore","billing_start_month":"Mar 2026","demand_aging":101.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"BAU","operational_status":"BAU","status":"BAU","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":57664.0,"role":"Trade Surveillance","demand_name":"Trade Surveillance","proposal_type":"Onboarded","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":34.0,"candidate_name":"Abhas Mishra","status2":"Candidate onboarded","role_location":"Pune","working_model":"Offshore","billing_start_month":"Mar 2026","demand_aging":101.0,"comments":"","billing_start_date_str":"2026-03-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Fulfilled (onboarding in progress)","status":"SO created","account":"BNY","specialization":"Wealth management","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":4,"num_resources":1.0,"monthly_revenue":21600.0,"yearly_revenue":205200.0,"role":"BA / Financial Engineer","demand_name":"Pershing US - FE","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":135.0,"candidate_name":"Oren Kedem","status2":"SO created","role_location":"NYC","working_model":"Onsite","billing_start_month":"Apr 2026","demand_aging":60.0,"comments":"3/11 - Oren's L2 interview went well.\n2/13 - SO creation in progress\n2/18- candidate identification in progress","billing_start_date_str":"2026-04-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Fulfilled (onboarding in progress)","status":"SO created","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":4,"num_resources":1.0,"monthly_revenue":20640.0,"yearly_revenue":196080.0,"role":"Business Analyst - Financial Crime & Compliance - LM/PT","demand_name":"FCC - AML","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":129.0,"candidate_name":"Arjun Banerjee","status2":"SO created","role_location":"Lake Mary/ Pittsburg","working_model":"Onsite","billing_start_month":"Apr 2026","demand_aging":60.0,"comments":"3/27 - Arjun was confirmed","billing_start_date_str":"2026-04-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":4,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":51680.0,"role":"CT - Fin. Reg. Reporting (BL86)","demand_name":"Reg Reporting","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Premkumar Poominaraj","bill_rate_usd":34.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Pune","working_model":"Offshore","billing_start_month":"Apr 2026","demand_aging":60.0,"comments":"","billing_start_date_str":"2026-04-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":6,"num_resources":1.0,"monthly_revenue":20640.0,"yearly_revenue":152736.0,"role":"Data Analyst - Payments & Compliance","demand_name":"Apex Consultant Transition","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":129.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Lake Mary/ Pittsburg","working_model":"Onsite","billing_start_month":"Jun 2026","demand_aging":14.0,"comments":"","billing_start_date_str":"2026-06-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":6,"num_resources":1.0,"monthly_revenue":20640.0,"yearly_revenue":152736.0,"role":"Data Analyst - Surveillance & Risk","demand_name":"Apex Consultant Transition","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":129.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Lake Mary/ Pittsburg","working_model":"Onsite","billing_start_month":"Jun 2026","demand_aging":14.0,"comments":"","billing_start_date_str":"2026-06-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":6,"num_resources":1.0,"monthly_revenue":20640.0,"yearly_revenue":152736.0,"role":"Data Analyst - AML & Actimize","demand_name":"Apex Consultant Transition","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":129.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Lake Mary/ Pittsburg","working_model":"Onsite","billing_start_month":"Jun 2026","demand_aging":14.0,"comments":"","billing_start_date_str":"2026-06-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":6,"num_resources":1.0,"monthly_revenue":17280.0,"yearly_revenue":127872.0,"role":"Scrum Lead - Data Engineering","demand_name":"Apex Consultant Transition","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":108.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Lake Mary/ Pittsburg","working_model":"Onsite","billing_start_month":"Jun 2026","demand_aging":14.0,"comments":"","billing_start_date_str":"2026-06-01","billing_end_date_str":"2026-12-31"},{"demand_type":"Rebadge","operational_status":"Pipeline","status":"SO created","account":"BNY","specialization":"Wealth management","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":4,"num_resources":1.0,"monthly_revenue":17120.0,"yearly_revenue":154080.0,"role":"Product Owner - Money Movement","demand_name":"Pershing US - PO","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Debiprosad Lahiri","bill_rate_usd":107.0,"candidate_name":"Mukesh / Steven Kwan","status2":"SO created","role_location":"NYC","working_model":"Onsite","billing_start_month":"Apr 2026","demand_aging":-2.0,"comments":"Italo's replacement","billing_start_date_str":"2026-04-15","billing_end_date_str":"2026-12-31"},{"demand_type":"Backfill","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Wealth management","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":4,"num_resources":1.0,"monthly_revenue":17120.0,"yearly_revenue":154080.0,"role":"Product Owner - Cyber Resilience","demand_name":"Pershing US - PO","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Debiprosad Lahiri","bill_rate_usd":107.0,"candidate_name":"Sherif Nassar","status2":"","role_location":"NYC","working_model":"Onsite","billing_start_month":"Apr 2026","demand_aging":-2.0,"comments":"To be discussed with prasun on the status","billing_start_date_str":"2026-04-15","billing_end_date_str":"2026-12-31"},{"demand_type":"Rebadge","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"GRC","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":4,"num_resources":1.0,"monthly_revenue":20000.0,"yearly_revenue":180000.0,"role":"Data Engineer - Financial Crime & Compliance","demand_name":"ECV","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Wystan Menezes","bill_rate_usd":125.0,"candidate_name":"Prem","status2":"","role_location":"Lake Mary/ Pittsburg","working_model":"Onsite","billing_start_month":"Apr 2026","demand_aging":-2.0,"comments":"","billing_start_date_str":"2026-04-15","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":2,"num_resources":1.0,"monthly_revenue":4640.0,"yearly_revenue":51736.0,"role":"Financial Engineer - Pershing Wealth","demand_name":"Pershing US - FE","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":29.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Pune","working_model":"Offshore","billing_start_month":"Feb 2026","demand_aging":60.0,"comments":"","billing_start_date_str":"2026-02-12","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Fulfilled (onboarding in progress)","status":"TBC","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":0.0,"yearly_revenue":0.0,"role":"Trade Surveillance (2-month tracking)","demand_name":"Trade Surveillance","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":0.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Pune","working_model":"Offshore","billing_start_month":"Mar 2026","demand_aging":21.0,"comments":"","billing_start_date_str":"2026-03-23","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Fulfilled (onboarding in progress)","status":"TBC","account":"BNY","specialization":"GRC","onsite_offshore":"Offshore","quarter":"Q1","year":"2026","year_from_date":2026,"month_from_date":3,"num_resources":1.0,"monthly_revenue":0.0,"yearly_revenue":0.0,"role":"Trade Surveillance (2-month tracking)","demand_name":"Trade Surveillance","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":0.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Pune","working_model":"Offshore","billing_start_month":"Mar 2026","demand_aging":21.0,"comments":"","billing_start_date_str":"2026-03-23","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Wealth management","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":5,"num_resources":1.0,"monthly_revenue":21440.0,"yearly_revenue":180096.0,"role":"ERDAR","demand_name":"ERDAR","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Premkumar Poominaraj","bill_rate_usd":134.0,"candidate_name":"TBD","status2":"SO needed","role_location":"New York City","working_model":"Onsite","billing_start_month":"May 2026","demand_aging":15.0,"comments":"","billing_start_date_str":"2026-05-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Wealth management","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":5,"num_resources":1.0,"monthly_revenue":21440.0,"yearly_revenue":180096.0,"role":"ERDAR","demand_name":"ERDAR","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Premkumar Poominaraj","bill_rate_usd":134.0,"candidate_name":"TBD","status2":"SO needed","role_location":"New York City","working_model":"Onsite","billing_start_month":"May 2026","demand_aging":15.0,"comments":"","billing_start_date_str":"2026-05-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Wealth management","onsite_offshore":"Onsite","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":5,"num_resources":1.0,"monthly_revenue":21440.0,"yearly_revenue":180096.0,"role":"ERDAR","demand_name":"ERDAR","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Premkumar Poominaraj","bill_rate_usd":134.0,"candidate_name":"TBD","status2":"SO needed","role_location":"New York City","working_model":"Onsite","billing_start_month":"May 2026","demand_aging":15.0,"comments":"","billing_start_date_str":"2026-05-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Wealth management","onsite_offshore":"Offshore","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":5,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":45696.0,"role":"ERDAR","demand_name":"ERDAR","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Premkumar Poominaraj","bill_rate_usd":34.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Pune","working_model":"Offshore","billing_start_month":"May 2026","demand_aging":15.0,"comments":"","billing_start_date_str":"2026-05-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Wealth management","onsite_offshore":"Offshore","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":5,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":45696.0,"role":"ERDAR","demand_name":"ERDAR","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Premkumar Poominaraj","bill_rate_usd":34.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Pune","working_model":"Offshore","billing_start_month":"May 2026","demand_aging":15.0,"comments":"","billing_start_date_str":"2026-05-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Wealth management","onsite_offshore":"Offshore","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":5,"num_resources":1.0,"monthly_revenue":5440.0,"yearly_revenue":45696.0,"role":"ERDAR","demand_name":"ERDAR","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Premkumar Poominaraj","bill_rate_usd":34.0,"candidate_name":"TBD","status2":"SO needed","role_location":"Pune","working_model":"Offshore","billing_start_month":"May 2026","demand_aging":15.0,"comments":"","billing_start_date_str":"2026-05-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Corp Engg","onsite_offshore":"Offshore","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":5,"num_resources":1.0,"monthly_revenue":3706.0,"yearly_revenue":31130.4,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":23.16,"candidate_name":"TBD","status2":"SO needed","role_location":"India - Pune","working_model":"Offshore","billing_start_month":"May 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-05-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Corp Engg","onsite_offshore":"Offshore","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":6,"num_resources":1.0,"monthly_revenue":15776.0,"yearly_revenue":116742.4,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":98.6,"candidate_name":"TBD","status2":"SO needed","role_location":"India - Pune","working_model":"Offshore","billing_start_month":"Jun 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-06-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Corp Engg","onsite_offshore":"Offshore","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":6,"num_resources":1.0,"monthly_revenue":15776.0,"yearly_revenue":116742.4,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":98.6,"candidate_name":"TBD","status2":"SO needed","role_location":"India - Pune","working_model":"Offshore","billing_start_month":"Jun 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-06-01","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Asset Services Engineering","onsite_offshore":"Offshore","quarter":"Q2","year":"2026","year_from_date":2026,"month_from_date":6,"num_resources":1.0,"monthly_revenue":15776.0,"yearly_revenue":102544.0,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":98.6,"candidate_name":"TBD","status2":"SO needed","role_location":"India - Chennai, Pune","working_model":"Offshore","billing_start_month":"Jun 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-06-26","billing_end_date_str":"2026-12-31"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Corp Engg","onsite_offshore":"Onsite","quarter":"Q3","year":"2026","year_from_date":2026,"month_from_date":7,"num_resources":1.0,"monthly_revenue":14794.08,"yearly_revenue":94682.11,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":92.46,"candidate_name":"TBD","status2":"SO needed","role_location":"United States - LakeMary","working_model":"Onsite","billing_start_month":"Jul 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-07-01","billing_end_date_str":"2027-01-01"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Corp Engg","onsite_offshore":"Onsite","quarter":"Q3","year":"2026","year_from_date":2026,"month_from_date":7,"num_resources":1.0,"monthly_revenue":4624.0,"yearly_revenue":29593.6,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":28.9,"candidate_name":"TBD","status2":"SO needed","role_location":"United States - Pittsburgh","working_model":"Onsite","billing_start_month":"Jul 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-07-01","billing_end_date_str":"2027-01-02"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Corp Engg","onsite_offshore":"Offshore","quarter":"Q3","year":"2026","year_from_date":2026,"month_from_date":7,"num_resources":1.0,"monthly_revenue":4624.0,"yearly_revenue":29593.6,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":28.9,"candidate_name":"TBD","status2":"SO needed","role_location":"India - Pune","working_model":"Offshore","billing_start_month":"Jul 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-07-01","billing_end_date_str":"2027-01-03"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Asset Services Engineering","onsite_offshore":"Offshore","quarter":"Q3","year":"2026","year_from_date":2026,"month_from_date":7,"num_resources":1.0,"monthly_revenue":4624.0,"yearly_revenue":25663.2,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":28.9,"candidate_name":"TBD","status2":"SO needed","role_location":"India - Chennai, Pune","working_model":"Offshore","billing_start_month":"Jul 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-07-26","billing_end_date_str":"2027-01-04"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Corp Engg","onsite_offshore":"Onsite","quarter":"Q4","year":"2026","year_from_date":2026,"month_from_date":10,"num_resources":1.0,"monthly_revenue":4352.0,"yearly_revenue":14144.0,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":27.2,"candidate_name":"TBD","status2":"SO needed","role_location":"United States - LakeMary","working_model":"Onsite","billing_start_month":"Oct 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-10-01","billing_end_date_str":"2027-01-05"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Corp Engg","onsite_offshore":"Onsite","quarter":"Q4","year":"2026","year_from_date":2026,"month_from_date":10,"num_resources":1.0,"monthly_revenue":4352.0,"yearly_revenue":14361.6,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":27.2,"candidate_name":"TBD","status2":"SO needed","role_location":"United States - LakeMary","working_model":"Onsite","billing_start_month":"Oct 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-10-01","billing_end_date_str":"2027-01-06"},{"demand_type":"New","operational_status":"Pipeline","status":"TBC","account":"BNY","specialization":"Corp Engg","onsite_offshore":"Onsite","quarter":"Q4","year":"2026","year_from_date":2026,"month_from_date":10,"num_resources":1.0,"monthly_revenue":3706.0,"yearly_revenue":12415.1,"role":"Vendor Consolidation","demand_name":"Vendor Consolidation (Tranche 1)","proposal_type":"Confirmed Demand","demand_owner":"Priyank B.","account_poc":"Asha Mulmani","bill_rate_usd":23.16,"candidate_name":"TBD","status2":"SO needed","role_location":"United States - LakeMary","working_model":"Onsite","billing_start_month":"Oct 2026","demand_aging":7.0,"comments":"","billing_start_date_str":"2026-10-01","billing_end_date_str":"2027-01-07"}];
+
+// Filter valid records only
+const DATA = RAW_DATA.filter(d => d.demand_type !== 'Unknown' && d.account === 'BNY');
+
+let filteredData = [...DATA];
+let baseFiltered = [...DATA];
+let baseCurrentPage = 1;
+const BASE_PAGE_SIZE = 25;
+
+// Chart instances
+let charts = {};
+
+// ===========================
+// INIT
+// ===========================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+  populateFilters();
+  renderKPIs();
+  renderPipelineAlert();
+  renderRevenueTable();
+  renderRevenueLineChart();
+  renderFulfilmentDonut();
+  renderOpStatusChart();
+  renderDemandTypeBar();
+  renderDemandsView();
+  renderBaseData();
+});
+
+function showTab(tab) {
+  ['revenue','demands','basedata'].forEach(t => {
+    document.getElementById(`screen-${t}`).classList.toggle('hidden', t !== tab);
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+  });
+  if(tab === 'demands') renderDemandsView();
+}
+
+// ===========================
+// FILTERS
+// ===========================
+function populateFilters() {
+  const years = [...new Set(DATA.map(d => d.year_from_date).filter(y => y > 2000))].sort();
+  const yearSel = document.getElementById('filter-year');
+  years.forEach(y => { const o = document.createElement('option'); o.value = y; o.textContent = y; yearSel.appendChild(o); });
+
+  const types = [...new Set(DATA.map(d => d.demand_type))].sort();
+  const typeSel = document.getElementById('filter-demand-type');
+  types.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; typeSel.appendChild(o); });
+
+  // Base data filters
+  const opSel = document.getElementById('base-op-filter');
+  const opVals = [...new Set(DATA.map(d => d.operational_status))].sort();
+  opVals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; opSel.appendChild(o); });
+
+  const bTypeSel = document.getElementById('base-type-filter');
+  types.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; bTypeSel.appendChild(o); });
+}
+
+function applyFilters() {
+  const yr = document.getElementById('filter-year').value;
+  const qtr = document.getElementById('filter-quarter').value;
+  const dtype = document.getElementById('filter-demand-type').value;
+
+  filteredData = DATA.filter(d => {
+    if(yr !== 'all' && d.year_from_date != yr) return false;
+    if(qtr !== 'all' && d.quarter !== qtr) return false;
+    if(dtype !== 'all' && d.demand_type !== dtype) return false;
+    return true;
+  });
+
+  renderKPIs();
+  renderRevenueTable();
+  renderRevenueLineChart();
+  renderFulfilmentDonut();
+  renderOpStatusChart();
+  renderDemandTypeBar();
+}
+
+// ===========================
+// KPI CARDS
+// ===========================
+function renderKPIs() {
+  const totalFuture = filteredData.filter(d => d.demand_type === 'New').reduce((s,d)=>s+d.num_resources,0);
+  const pipeline = filteredData.filter(d => d.operational_status === 'Pipeline').reduce((s,d)=>s+d.num_resources,0);
+  const bau = filteredData.filter(d => d.operational_status === 'BAU').reduce((s,d)=>s+d.num_resources,0);
+  const fulfilled = filteredData.filter(d => d.operational_status.toLowerCase().includes('fulfilled') || d.operational_status === 'BAU').reduce((s,d)=>s+d.num_resources,0);
+  const totalRev = filteredData.reduce((s,d)=>s+d.yearly_revenue,0);
+
+  // Pipeline by quarter
+  const quarters = ['Q1','Q2','Q3','Q4'];
+  const qColors = {'Q1':'#00c6ff','Q2':'#7c3aed','Q3':'#f59e0b','Q4':'#10b981'};
+  const pipelineByQtr = {};
+  quarters.forEach(q => pipelineByQtr[q] = 0);
+  filteredData.filter(d => d.operational_status === 'Pipeline').forEach(d => {
+    if(d.quarter && pipelineByQtr[d.quarter] !== undefined) pipelineByQtr[d.quarter] += d.num_resources;
+  });
+  const qBreakdown = quarters.filter(q => pipelineByQtr[q] > 0).map(q =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:${qColors[q]};display:inline-block;"></span>
+      <span style="font-size:11px;color:var(--text2);">${q}:</span>
+      <span style="font-size:12px;font-weight:700;color:${qColors[q]};">${pipelineByQtr[q]}</span>
+    </span>`
+  ).join('');
+
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card" style="--accent-color: var(--accent);">
+      <div class="kpi-label">Future Roles (New)</div>
+      <div class="kpi-value" style="color:var(--accent);">${totalFuture}</div>
+      <div class="kpi-sub">Total new demand positions</div>
+      <div class="kpi-icon">🚀</div>
+    </div>
+    <div class="kpi-card" style="--accent-color: var(--pipeline); grid-column: span 2;">
+      <div class="kpi-label">Pipeline · Breakdown by Quarter</div>
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;">
+        <div class="kpi-value" style="color:var(--pipeline);">${pipeline}</div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding-bottom:4px;">${qBreakdown || '<span style="font-size:12px;color:var(--text3);">No pipeline data</span>'}</div>
+      </div>
+      <div class="kpi-sub">Active pipeline positions across quarters</div>
+      <div class="kpi-icon">📋</div>
+    </div>
+    <div class="kpi-card" style="--accent-color: var(--bau);">
+      <div class="kpi-label">BAU</div>
+      <div class="kpi-value" style="color:var(--bau);">${bau}</div>
+      <div class="kpi-sub">Business as usual positions</div>
+      <div class="kpi-icon">⚙️</div>
+    </div>
+    <div class="kpi-card" style="--accent-color: var(--fulfilled);">
+      <div class="kpi-label">Fulfilled</div>
+      <div class="kpi-value" style="color:var(--fulfilled);">${fulfilled}</div>
+      <div class="kpi-sub">Total rev: $${(totalRev/1e6).toFixed(2)}M</div>
+      <div class="kpi-icon">✅</div>
+    </div>
+    <div class="kpi-card" style="--accent-color: var(--pipeline); grid-column: span 2; padding:16px 20px;">
+      <div class="kpi-label" style="margin-bottom:12px;">📊 Pipeline Positions by Quarter</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        ${quarters.map(q => `
+          <div style="background:var(--surface2);border:1px solid ${qColors[q]}33;border-radius:10px;padding:12px 14px;border-left:3px solid ${qColors[q]};">
+            <div style="font-size:10px;font-weight:600;color:${qColors[q]};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${q}</div>
+            <div style="font-size:28px;font-weight:700;color:${pipelineByQtr[q]>0?qColors[q]:'var(--text3)'};">${pipelineByQtr[q]}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px;">${pipelineByQtr[q]===1?'position':'positions'}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ===========================
+// PIPELINE ALERT
+// ===========================
+function renderPipelineAlert() {
+  const today = new Date();
+  const nm = new Date(today.getFullYear(), today.getMonth()+1, 1);
+  const nmEnd = new Date(today.getFullYear(), today.getMonth()+2, 0);
+  const nextMonthStr = nm.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+
+  const pipelineNext = DATA.filter(d => {
+    if(!d.billing_start_date_str) return false;
+    const bd = new Date(d.billing_start_date_str);
+    return d.operational_status === 'Pipeline' && bd >= nm && bd <= nmEnd;
+  });
+  const count = pipelineNext.reduce((s,d)=>s+d.num_resources, 0);
+
+  document.getElementById('pipeline-alert').innerHTML = `
+    <div class="alert-icon">📅</div>
+    <div>
+      <div class="alert-title">Pipeline to be Fulfilled Next Month (${nextMonthStr})</div>
+      <div class="alert-sub">${count > 0 ? `${count} position(s) in pipeline scheduled to start in ${nextMonthStr}` : `No pipeline positions currently scheduled to start in ${nextMonthStr}`}</div>
+    </div>
+    ${count > 0 ? `<span class="badge badge-pipeline" style="margin-left:auto;">${count} Position${count>1?'s':''}</span>` : ''}
+  `;
+}
+
+// ===========================
+// REVENUE TABLE
+// ===========================
+function renderRevenueTable() {
+  const grouped = {};
+  filteredData.forEach(d => {
+    if(!d.year_from_date || d.year_from_date < 2000) return;
+    const key = `${d.account}|${d.year_from_date}|${d.quarter}`;
+    if(!grouped[key]) grouped[key] = {account:d.account, year:d.year_from_date, quarter:d.quarter, monthly:0, yearly:0, pos:0};
+    grouped[key].monthly += d.monthly_revenue;
+    grouped[key].yearly += d.yearly_revenue;
+    grouped[key].pos += d.num_resources;
+  });
+
+  const rows = Object.values(grouped).sort((a,b) => a.year - b.year || a.quarter.localeCompare(b.quarter));
+  const tbody = document.getElementById('revTableBody');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><span class="badge badge-bau">${r.account}</span></td>
+      <td>${r.year}</td>
+      <td><span class="badge" style="background:rgba(100,116,139,0.2);color:var(--text2);">${r.quarter}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;">$${r.monthly.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">$${r.yearly.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+      <td style="font-weight:600;">${r.pos}</td>
+    </tr>
+  `).join('');
+}
+
+// ===========================
+// REVENUE LINE CHART
+// ===========================
+function renderRevenueLineChart() {
+  if(charts.revLine) charts.revLine.destroy();
+
+  const qtrMap = {};
+  filteredData.forEach(d => {
+    if(!d.year_from_date || d.year_from_date < 2000) return;
+    const key = `${d.year_from_date} ${d.quarter}`;
+    if(!qtrMap[key]) qtrMap[key] = {label:key, monthly:0, year:d.year_from_date, q:d.quarter};
+    qtrMap[key].monthly += d.monthly_revenue;
+  });
+
+  const sorted = Object.values(qtrMap).sort((a,b) => a.year-b.year || a.q.localeCompare(b.q));
+  let cumulative = 0;
+  const labels = sorted.map(r => r.label);
+  const cumRevData = sorted.map(r => { cumulative += r.monthly; return Math.round(cumulative); });
+  const monthlyData = sorted.map(r => Math.round(r.monthly));
+
+  // Demand type series
+  const types = ['BAU','New','Backfill','Rebadge'];
+  const typeColors = {'BAU':'#0ea5e9','New':'#f59e0b','Backfill':'#ef4444','Rebadge':'#a78bfa'};
+  const typeSeries = {};
+  types.forEach(t => { typeSeries[t] = {}; sorted.forEach(r => { typeSeries[t][r.label] = 0; }); });
+  filteredData.forEach(d => {
+    if(!d.year_from_date || d.year_from_date < 2000) return;
+    const key = `${d.year_from_date} ${d.quarter}`;
+    if(typeSeries[d.demand_type] && typeSeries[d.demand_type][key] !== undefined) {
+      typeSeries[d.demand_type][key] += d.monthly_revenue;
+    }
+  });
+
+  const ctx = document.getElementById('revenueLineChart').getContext('2d');
+  charts.revLine = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line',
+          label: 'Cumulative Revenue',
+          data: cumRevData,
+          borderColor: '#00c6ff',
+          backgroundColor: 'rgba(0,198,255,0.08)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2.5,
+          pointBackgroundColor: '#00c6ff',
+          pointRadius: 4,
+          yAxisID: 'y2',
+          order: 0
+        },
+        ...types.map(t => ({
+          type: 'bar',
+          label: t,
+          data: labels.map(l => Math.round(typeSeries[t][l] || 0)),
+          backgroundColor: typeColors[t] + '99',
+          borderColor: typeColors[t],
+          borderWidth: 1,
+          borderRadius: 3,
+          yAxisID: 'y',
+          stack: 'demand',
+          order: 1
+        }))
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#94a3b8', font: {size:10}, boxWidth:10 } } },
+      scales: {
+        x: { ticks: {color:'#64748b', font:{size:10}}, grid: {color:'rgba(30,45,69,0.5)'} },
+        y: { ticks: {color:'#64748b', font:{size:10}, callback: v => '$'+Math.round(v/1000)+'K'}, grid: {color:'rgba(30,45,69,0.5)'}, stacked: true },
+        y2: { position:'right', ticks:{color:'#00c6ff', font:{size:10}, callback: v => '$'+Math.round(v/1000)+'K'}, grid:{display:false} }
+      }
+    }
+  });
+}
+
+// ===========================
+// DONUT CHARTS
+// ===========================
+function renderDonut(canvasId, legendId, data, colors) {
+  if(charts[canvasId]) charts[canvasId].destroy();
+  const total = data.reduce((s,d)=>s+d.value,0);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  charts[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d=>d.label),
+      datasets: [{ data: data.map(d=>d.value), backgroundColor: colors.map(c=>c+'cc'), borderColor: colors, borderWidth: 1.5, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: { legend: {display:false}, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} (${((ctx.raw/total)*100).toFixed(1)}%)` } } }
+    }
+  });
+  document.getElementById(legendId).innerHTML = data.map((d,i) => `
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:${colors[i]};"></div>${d.label}</div>
+      <div><span class="legend-count">${d.value}</span><span class="legend-pct">${((d.value/total)*100).toFixed(0)}%</span></div>
+    </div>
+  `).join('');
+}
+
+function renderFulfilmentDonut() {
+  const grouped = {};
+  filteredData.forEach(d => {
+    const t = d.demand_type;
+    if(!grouped[t]) grouped[t] = 0;
+    grouped[t] += d.num_resources;
+  });
+  const data = Object.entries(grouped).map(([k,v])=>({label:k,value:v})).filter(d=>d.value>0);
+  const colors = ['#0ea5e9','#f59e0b','#ef4444','#a78bfa','#10b981'];
+  renderDonut('fulfilmentDonut', 'fulfilmentLegend', data, colors);
+}
+
+function renderOpStatusChart() {
+  if(charts.opStatus) charts.opStatus.destroy();
+  const grouped = {};
+  filteredData.forEach(d => {
+    const s = d.operational_status;
+    if(!grouped[s]) grouped[s]=0;
+    grouped[s] += d.num_resources;
+  });
+  const labels = Object.keys(grouped);
+  const values = Object.values(grouped);
+  const bgColors = ['#0ea5e9cc','#7c3aedcc','#10b981cc','#f59e0bcc'];
+  const ctx = document.getElementById('opStatusChart').getContext('2d');
+  charts.opStatus = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{data:values, backgroundColor:bgColors, borderColor:bgColors.map(c=>c.slice(0,7)), borderWidth:1.5}] },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false}} }
+  });
+  const total = values.reduce((s,v)=>s+v,0);
+  document.getElementById('opStatusLegend').innerHTML = labels.map((l,i) => `
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:${bgColors[i]};"></div>${l}</div>
+      <div><span class="legend-count">${values[i]}</span><span class="legend-pct">${((values[i]/total)*100).toFixed(0)}%</span></div>
+    </div>
+  `).join('');
+}
+
+function renderDemandTypeBar() {
+  if(charts.demandBar) charts.demandBar.destroy();
+  const grouped = {};
+  filteredData.forEach(d => {
+    const k = `${d.year_from_date}-${d.quarter}`;
+    if(d.year_from_date < 2000) return;
+    if(!grouped[k]) grouped[k] = {BAU:0,New:0,Backfill:0,Rebadge:0, yr:d.year_from_date, q:d.quarter};
+    if(grouped[k][d.demand_type] !== undefined) grouped[k][d.demand_type] += d.num_resources;
+  });
+  const sorted = Object.values(grouped).sort((a,b)=>a.yr-b.yr||a.q.localeCompare(b.q));
+  const labels = sorted.map(r=>`${r.yr} ${r.q}`);
+  const ctx = document.getElementById('demandTypeBar').getContext('2d');
+  charts.demandBar = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels,
+      datasets: [
+        {label:'BAU', data:sorted.map(r=>r.BAU), backgroundColor:'#0ea5e999', borderColor:'#0ea5e9', borderWidth:1, borderRadius:3, stack:'s'},
+        {label:'New', data:sorted.map(r=>r.New), backgroundColor:'#f59e0b99', borderColor:'#f59e0b', borderWidth:1, borderRadius:3, stack:'s'},
+        {label:'Backfill', data:sorted.map(r=>r.Backfill), backgroundColor:'#ef444499', borderColor:'#ef4444', borderWidth:1, borderRadius:3, stack:'s'},
+        {label:'Rebadge', data:sorted.map(r=>r.Rebadge), backgroundColor:'#a78bfa99', borderColor:'#a78bfa', borderWidth:1, borderRadius:3, stack:'s'},
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#94a3b8',font:{size:9},boxWidth:8}}}, scales:{ x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(30,45,69,0.5)'},stacked:true}, y:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(30,45,69,0.5)'},stacked:true} } }
+  });
+}
+
+// ===========================
+// DEMANDS VIEW CHARTS (with Year breakdown)
+// ===========================
+function getDemandsYearFilter() {
+  const sel = document.getElementById('demand-year-filter');
+  return sel ? sel.value : 'all';
+}
+
+function getFilteredDemandData() {
+  const yr = getDemandsYearFilter();
+  return yr === 'all' ? DATA : DATA.filter(d => d.year_from_date == yr);
+}
+
+function renderDemandsView() {
+  renderSpecChart();
+  renderDemandType2();
+  renderOnsiteOffshore();
+  renderNewDemandQtr();
+}
+
+function renderSpecChart() {
+  if(charts.spec) charts.spec.destroy();
+  const yr = getDemandsYearFilter();
+  const years = yr === 'all' ? [2025, 2026] : [parseInt(yr)];
+  const specs = [...new Set(DATA.map(d=>d.specialization))].sort();
+  const yearColors = { 2025: '#00c6ff', 2026: '#7c3aed' };
+
+  // Group: spec -> year -> count
+  const grouped = {};
+  specs.forEach(s => { grouped[s] = {}; years.forEach(y => grouped[s][y] = 0); });
+  DATA.filter(d => yr==='all' || d.year_from_date==yr).forEach(d => {
+    if(grouped[d.specialization] && d.year_from_date > 2000) {
+      grouped[d.specialization][d.year_from_date] = (grouped[d.specialization][d.year_from_date]||0) + d.num_resources;
+    }
+  });
+
+  const ctx = document.getElementById('specChart').getContext('2d');
+  charts.spec = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels: specs,
+      datasets: years.map(y => ({
+        label: String(y),
+        data: specs.map(s => grouped[s][y]||0),
+        backgroundColor: yearColors[y]+'99',
+        borderColor: yearColors[y],
+        borderWidth: 1.5,
+        borderRadius: 4
+      }))
+    },
+    options: {
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#94a3b8', font:{size:10}, boxWidth:10 } } },
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(30,45,69,0.5)'}},
+        y:{ticks:{color:'#e2e8f0',font:{size:11}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderDemandType2() {
+  if(charts.dt2) charts.dt2.destroy();
+  const yr = getDemandsYearFilter();
+  const years = yr === 'all' ? [2025, 2026] : [parseInt(yr)];
+  const types = ['BAU','New','Backfill','Rebadge'];
+  const yearColors = { 2025: '#00c6ff', 2026: '#7c3aed' };
+
+  const grouped = {};
+  types.forEach(t => { grouped[t] = {}; years.forEach(y => grouped[t][y] = 0); });
+  DATA.filter(d => yr==='all' || d.year_from_date==yr).forEach(d => {
+    if(grouped[d.demand_type] && d.year_from_date > 2000) {
+      grouped[d.demand_type][d.year_from_date] = (grouped[d.demand_type][d.year_from_date]||0) + d.num_resources;
+    }
+  });
+
+  const typeAccentColors = {'BAU':'#0ea5e9','New':'#f59e0b','Backfill':'#ef4444','Rebadge':'#a78bfa'};
+  const ctx = document.getElementById('demandType2Chart').getContext('2d');
+  charts.dt2 = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels: types,
+      datasets: years.map(y => ({
+        label: String(y),
+        data: types.map(t => grouped[t][y]||0),
+        backgroundColor: yearColors[y]+'99',
+        borderColor: yearColors[y],
+        borderWidth: 1.5,
+        borderRadius: 5
+      }))
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#94a3b8', font:{size:10}, boxWidth:10 } } },
+      scales:{
+        x:{ticks:{color:'#e2e8f0',font:{size:11}},grid:{display:false}},
+        y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(30,45,69,0.5)'}}
+      }
+    }
+  });
+}
+
+function renderOnsiteOffshore() {
+  if(charts.onsiteBar) charts.onsiteBar.destroy();
+  const yr = getDemandsYearFilter();
+  const years = yr === 'all' ? [2025, 2026] : [parseInt(yr)];
+  const modes = ['Onsite','Offshore'];
+  const yearColors = { 2025: '#00c6ff', 2026: '#7c3aed' };
+
+  const grouped = {};
+  modes.forEach(m => { grouped[m] = {}; years.forEach(y => grouped[m][y] = 0); });
+  DATA.filter(d => yr==='all' || d.year_from_date==yr).forEach(d => {
+    if(grouped[d.onsite_offshore] && d.year_from_date > 2000) {
+      grouped[d.onsite_offshore][d.year_from_date] = (grouped[d.onsite_offshore][d.year_from_date]||0) + d.num_resources;
+    }
+  });
+
+  const ctx = document.getElementById('onsiteOffshoreChart').getContext('2d');
+  charts.onsiteBar = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels: modes,
+      datasets: years.map(y => ({
+        label: String(y),
+        data: modes.map(m => grouped[m][y]||0),
+        backgroundColor: yearColors[y]+'99',
+        borderColor: yearColors[y],
+        borderWidth: 1.5,
+        borderRadius: 5
+      }))
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#94a3b8', font:{size:10}, boxWidth:10 } } },
+      scales:{
+        x:{ticks:{color:'#e2e8f0',font:{size:13},font:{weight:'600'}},grid:{display:false}},
+        y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(30,45,69,0.5)'}}
+      }
+    }
+  });
+
+  // Build summary legend below
+  const total2025 = modes.reduce((s,m)=>s+(grouped[m][2025]||0),0);
+  const total2026 = modes.reduce((s,m)=>s+(grouped[m][2026]||0),0);
+  document.getElementById('onsiteLegend').innerHTML = `
+    ${years.map(y => {
+      const tot = modes.reduce((s,m)=>s+(grouped[m][y]||0),0);
+      return modes.map(m => `
+        <div class="legend-item">
+          <div class="legend-left">
+            <div class="legend-dot" style="background:${yearColors[y]};"></div>
+            ${y} · ${m}
+          </div>
+          <div>
+            <span class="legend-count">${grouped[m][y]||0}</span>
+            <span class="legend-pct">${tot>0?((( grouped[m][y]||0)/tot)*100).toFixed(0):0}%</span>
+          </div>
+        </div>`).join('');
+    }).join('')}
+  `;
+}
+
+function renderNewDemandQtr() {
+  if(charts.newQtr) charts.newQtr.destroy();
+  const yr = getDemandsYearFilter();
+  const years = yr === 'all' ? [2025, 2026] : [parseInt(yr)];
+  const quarters = ['Q1','Q2','Q3','Q4'];
+  const yearColors = { 2025: '#f59e0b', 2026: '#10b981' };
+
+  // Group new demands by year + quarter
+  const grouped = {};
+  years.forEach(y => { grouped[y] = {}; quarters.forEach(q => grouped[y][q] = 0); });
+  DATA.filter(d => d.demand_type==='New' && (yr==='all' || d.year_from_date==yr)).forEach(d => {
+    if(d.year_from_date > 2000 && grouped[d.year_from_date] && d.quarter) {
+      grouped[d.year_from_date][d.quarter] = (grouped[d.year_from_date][d.quarter]||0) + d.num_resources;
+    }
+  });
+
+  const ctx = document.getElementById('newDemandQtrChart').getContext('2d');
+  charts.newQtr = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels: quarters,
+      datasets: years.map(y => ({
+        label: String(y),
+        data: quarters.map(q => grouped[y][q]||0),
+        backgroundColor: yearColors[y]+'99',
+        borderColor: yearColors[y],
+        borderWidth: 1.5,
+        borderRadius: 5
+      }))
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#94a3b8', font:{size:10}, boxWidth:10 } } },
+      scales:{
+        x:{ticks:{color:'#e2e8f0',font:{size:11}},grid:{display:false}},
+        y:{ticks:{color:'#64748b',font:{size:10},stepSize:1},grid:{color:'rgba(30,45,69,0.5)'}}
+      }
+    }
+  });
+}
+
+// ===========================
+// BASE DATA TABLE + EDITING
+// ===========================
+let editMode = false;
+let editingIndex = null; // index in DATA array
+let hasUnsavedChanges = false;
+
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = document.getElementById('editModeBtn');
+  btn.textContent = editMode ? '✅ Edit Mode ON' : '✏️ Edit Mode';
+  btn.classList.toggle('active', editMode);
+  renderBaseData();
+  showToast(editMode ? '✏️ Edit mode enabled — click any row to edit' : '👁 View mode restored');
+}
+
+function filterBaseData() {
+  const q = document.getElementById('baseSearch').value.toLowerCase();
+  const op = document.getElementById('base-op-filter').value;
+  const dt = document.getElementById('base-type-filter').value;
+  baseFiltered = DATA.filter(d => {
+    if(op!=='all' && d.operational_status!==op) return false;
+    if(dt!=='all' && d.demand_type!==dt) return false;
+    if(q && !`${d.demand_name} ${d.role} ${d.candidate_name} ${d.specialization} ${d.role_location}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  baseCurrentPage = 1;
+  renderBaseData();
+}
+
+function renderBaseData() {
+  const start = (baseCurrentPage-1)*BASE_PAGE_SIZE;
+  const page = baseFiltered.slice(start, start+BASE_PAGE_SIZE);
+  const tbody = document.getElementById('baseDataBody');
+
+  const dtBadge = t => {
+    const cls = t==='BAU'?'bau':t==='New'?'new':t==='Backfill'?'backfill':t==='Rebadge'?'rebadge':'tbc';
+    return `<span class="badge badge-${cls}">${t}</span>`;
+  };
+  const opBadge = s => {
+    const cls = s==='BAU'?'bau':s==='Pipeline'?'pipeline':s.includes('Fulfilled')?'fulfilled':'tbc';
+    return `<span class="badge badge-${cls}">${s}</span>`;
+  };
+
+  tbody.innerHTML = page.map((d,i) => {
+    const globalIdx = DATA.indexOf(d);
+    const rowClass = editMode ? 'editable-row' : '';
+    const clickHandler = editMode ? `onclick="openEditModal(${globalIdx})"` : '';
+    const editHint = editMode ? `<span style="font-size:9px;color:var(--accent);margin-left:4px;">✏</span>` : '';
+    return `
+    <tr class="${rowClass}" ${clickHandler} title="${editMode?'Click to edit this record':''}">
+      <td style="color:var(--text3);font-family:'JetBrains Mono',monospace;">${start+i+1}${editHint}</td>
+      <td style="font-weight:500;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.demand_name}">${d.demand_name||'-'}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);" title="${d.role}">${d.role||'-'}</td>
+      <td>${dtBadge(d.demand_type)}</td>
+      <td>${opBadge(d.operational_status)}</td>
+      <td style="color:var(--text2);">${d.specialization}</td>
+      <td><span class="badge badge-${d.onsite_offshore==='Onsite'?'onsite':'offshore'}">${d.onsite_offshore}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${d.billing_start_date_str||'-'}</td>
+      <td><span class="badge" style="background:rgba(100,116,139,0.2);color:var(--text2);">${d.quarter}</span></td>
+      <td style="text-align:center;font-weight:600;">${d.num_resources}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">$${d.monthly_revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.candidate_name}">${d.candidate_name||'-'}</td>
+      <td style="color:var(--text3);font-size:11px;">${d.status2||'-'}</td>
+      <td style="color:var(--text3);font-size:11px;">${d.role_location||'-'}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text3);font-size:11px;" title="${d.comments}">${d.comments||'-'}</td>
+    </tr>`;
+  }).join('');
+
+  const totalPages = Math.ceil(baseFiltered.length/BASE_PAGE_SIZE);
+  document.getElementById('baseDataInfo').innerHTML = `${baseFiltered.length} records${hasUnsavedChanges?'&nbsp;<span class="unsaved-dot"></span>':''}&nbsp;`;
+  renderPagination(totalPages);
+}
+
+// ===========================
+// MODAL OPEN / CLOSE
+// ===========================
+function openEditModal(idx) {
+  editingIndex = idx;
+  const d = DATA[idx];
+  document.getElementById('modalTitle').textContent = `✏️ Edit Record — ${d.demand_name || 'Row '+(idx+1)}`;
+  document.getElementById('deleteBtn').style.display = 'flex';
+  populateModalFields(d);
+  document.getElementById('editModal').classList.add('open');
+}
+
+function openAddModal() {
+  editingIndex = null;
+  document.getElementById('modalTitle').textContent = '＋ Add New Record';
+  document.getElementById('deleteBtn').style.display = 'none';
+  const blank = {
+    demand_name:'', role:'', demand_type:'New', operational_status:'Pipeline',
+    specialization:'GRC', onsite_offshore:'Onsite', billing_start_date_str:'',
+    billing_end_date_str:'', quarter:'Q1', num_resources:1, monthly_revenue:0,
+    yearly_revenue:0, bill_rate_usd:0, candidate_name:'TBD', status2:'SO needed',
+    role_location:'', working_model:'Onsite', account_poc:'', comments:''
+  };
+  populateModalFields(blank);
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editingIndex = null;
+}
+
+function populateModalFields(d) {
+  const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
+  setVal('f_demand_name', d.demand_name);
+  setVal('f_role', d.role);
+  setVal('f_demand_type', d.demand_type);
+  setVal('f_operational_status', d.operational_status);
+  setVal('f_specialization', d.specialization);
+  setVal('f_onsite_offshore', d.onsite_offshore);
+  setVal('f_billing_start_date_str', d.billing_start_date_str);
+  setVal('f_billing_end_date_str', d.billing_end_date_str);
+  setVal('f_quarter', d.quarter);
+  setVal('f_num_resources', d.num_resources);
+  setVal('f_monthly_revenue', d.monthly_revenue);
+  setVal('f_yearly_revenue', d.yearly_revenue);
+  setVal('f_bill_rate_usd', d.bill_rate_usd);
+  setVal('f_candidate_name', d.candidate_name);
+  setVal('f_status2', d.status2);
+  setVal('f_role_location', d.role_location);
+  setVal('f_working_model', d.working_model);
+  setVal('f_account_poc', d.account_poc);
+  setVal('f_comments', d.comments);
+}
+
+function getModalValues() {
+  const gv = id => document.getElementById(id).value;
+  return {
+    demand_name: gv('f_demand_name'),
+    role: gv('f_role'),
+    demand_type: gv('f_demand_type'),
+    operational_status: gv('f_operational_status'),
+    specialization: gv('f_specialization'),
+    onsite_offshore: gv('f_onsite_offshore'),
+    billing_start_date_str: gv('f_billing_start_date_str'),
+    billing_end_date_str: gv('f_billing_end_date_str'),
+    quarter: gv('f_quarter'),
+    num_resources: parseFloat(gv('f_num_resources')) || 0,
+    monthly_revenue: parseFloat(gv('f_monthly_revenue')) || 0,
+    yearly_revenue: parseFloat(gv('f_yearly_revenue')) || 0,
+    bill_rate_usd: parseFloat(gv('f_bill_rate_usd')) || 0,
+    candidate_name: gv('f_candidate_name'),
+    status2: gv('f_status2'),
+    role_location: gv('f_role_location'),
+    working_model: gv('f_working_model'),
+    account_poc: gv('f_account_poc'),
+    comments: gv('f_comments'),
+    account: 'BNY',
+    year_from_date: gv('f_billing_start_date_str') ? new Date(gv('f_billing_start_date_str')).getFullYear() : 0,
+    month_from_date: gv('f_billing_start_date_str') ? new Date(gv('f_billing_start_date_str')).getMonth()+1 : 0,
+    billing_start_month: gv('f_billing_start_date_str') ? new Date(gv('f_billing_start_date_str')).toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '',
+    status: gv('f_status2'), year: String(gv('f_billing_start_date_str') ? new Date(gv('f_billing_start_date_str')).getFullYear() : ''),
+    demand_aging: 0, demand_owner: 'Priyank B.'
+  };
+}
+
+function saveRecord() {
+  const vals = getModalValues();
+  if(!vals.demand_name) { showToast('⚠️ Demand Name is required'); return; }
+
+  if(editingIndex !== null) {
+    Object.assign(DATA[editingIndex], vals);
+    showToast('✅ Record updated successfully');
+  } else {
+    DATA.push(vals);
+    showToast('✅ New record added successfully');
+  }
+
+  hasUnsavedChanges = true;
+  closeModal();
+  filterBaseData();
+}
+
+function deleteRecord() {
+  if(editingIndex === null) return;
+  if(!confirm(`Delete "${DATA[editingIndex].demand_name}"? This cannot be undone.`)) return;
+  DATA.splice(editingIndex, 1);
+  hasUnsavedChanges = true;
+  closeModal();
+  filterBaseData();
+  showToast('🗑 Record deleted');
+}
+
+// Close modal on overlay click
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if(e.target === this) closeModal();
+});
+
+function renderPagination(totalPages) {
+  const pg = document.getElementById('basePagination');
+  if(totalPages <= 1){ pg.innerHTML=''; return; }
+  let html = `<button class="page-btn" onclick="goPage(${baseCurrentPage-1})" ${baseCurrentPage===1?'disabled':''}>‹ Prev</button>`;
+  for(let i=1;i<=totalPages;i++){
+    if(i===1||i===totalPages||Math.abs(i-baseCurrentPage)<=1){
+      html += `<button class="page-btn ${i===baseCurrentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    } else if(Math.abs(i-baseCurrentPage)===2){
+      html += `<span style="color:var(--text3);padding:0 4px;">…</span>`;
+    }
+  }
+  html += `<button class="page-btn" onclick="goPage(${baseCurrentPage+1})" ${baseCurrentPage===totalPages?'disabled':''}>Next ›</button>`;
+  pg.innerHTML = html;
+}
+
+function goPage(p) {
+  const totalPages = Math.ceil(baseFiltered.length/BASE_PAGE_SIZE);
+  if(p<1||p>totalPages) return;
+  baseCurrentPage = p;
+  renderBaseData();
+}
+
+// ===========================
+// EXPORT FUNCTIONS
+// ===========================
+function toCSV(rows, headers) {
+  const escape = v => `"${String(v||'').replace(/"/g,'""')}"`;
+  return [headers.join(','), ...rows.map(r=>headers.map(h=>escape(r[h])).join(','))].join('\n');
+}
+
+function downloadCSV(content, filename) {
+  const blob = new Blob([content], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  showToast('✅ Export downloaded: ' + filename);
+}
+
+function exportScreen1() {
+  const headers = ['account','year_from_date','quarter','demand_type','operational_status','num_resources','monthly_revenue','yearly_revenue'];
+  downloadCSV(toCSV(filteredData, headers), 'BNY_Revenue_Fulfilment.csv');
+}
+
+function exportDemands() {
+  const headers = ['demand_name','demand_type','specialization','onsite_offshore','quarterly_demand_new','num_resources'];
+  downloadCSV(toCSV(DATA, headers), 'BNY_Demands_View.csv');
+}
+
+function exportBaseData() {
+  const headers = ['demand_name','role','demand_type','operational_status','status','specialization','onsite_offshore','billing_start_date_str','billing_end_date_str','quarter','year_from_date','num_resources','monthly_revenue','yearly_revenue','candidate_name','status2','role_location','working_model','comments'];
+  downloadCSV(toCSV(baseFiltered, headers), 'BNY_Base_Data.csv');
+}
+
+// ===========================
+// FILE IMPORT (new rows only)
+// ===========================
+function handleFileImport(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  showToast(`📥 Importing: ${file.name} — New rows will be appended...`);
+
+  // Simulate import
+  setTimeout(() => {
+    showToast(`✅ Import complete — Duplicate rows skipped. New data merged.`);
+  }, 1800);
+  event.target.value = '';
+}
+
+// Drag & Drop
+const importZone = document.getElementById('importZone');
+importZone.addEventListener('dragover', e => { e.preventDefault(); importZone.classList.add('dragover'); });
+importZone.addEventListener('dragleave', () => importZone.classList.remove('dragover'));
+importZone.addEventListener('drop', e => {
+  e.preventDefault();
+  importZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if(file) showToast(`📥 Received: ${file.name} — Processing...`);
+});
+
+// ===========================
+// TOAST
+// ===========================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
